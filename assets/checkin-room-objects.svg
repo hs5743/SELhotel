@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="360" viewBox="0 0 520 360" fill="none">
+  <defs>
+    <linearGradient id="lampGlow" x1="292" y1="82" x2="292" y2="232" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF0B8" stop-opacity=".92"/>
+      <stop offset="1" stop-color="#FFF0B8" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="shadow" x="38" y="50" width="420" height="272" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#4A382E" flood-opacity=".12"/>
+    </filter>
+  </defs>
+  <rect width="520" height="360" fill="transparent"/>
+  <ellipse cx="286" cy="164" rx="124" ry="112" fill="url(#lampGlow)" opacity=".72"/>
+  <g filter="url(#shadow)">
+    <path d="M82 284h350" stroke="#D8CDBF" stroke-width="12" stroke-linecap="round"/>
+    <rect x="118" y="160" width="116" height="88" rx="16" fill="#FFFDF8" stroke="#D8CDBF" stroke-width="6"/>
+    <path d="M144 190h64M144 216h42" stroke="#745078" stroke-width="8" stroke-linecap="round" opacity=".65"/>
+    <path d="M282 116h88l-22 70h-44l-22-70Z" fill="#FFE0C5" stroke="#A45E30" stroke-width="6"/>
+    <path d="M326 186v78" stroke="#A45E30" stroke-width="8" stroke-linecap="round"/>
+    <path d="M294 264h64" stroke="#A45E30" stroke-width="10" stroke-linecap="round"/>
+    <path d="M92 256c0-48 39-88 88-88 48 0 88 40 88 88" fill="#E8DEF8" opacity=".55"/>
+    <rect x="392" y="184" width="48" height="70" rx="13" fill="#DBEFD9" stroke="#4D7B4F" stroke-width="6"/>
+    <path d="M416 184c-34-32-22-72 24-90 14 45 4 76-24 90ZM416 184c-28-28-64-23-80 18 38 16 66 8 80-18Z" fill="#6FA06B"/>
+  </g>
+</svg>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="340" viewBox="0 0 500 340" fill="none">
+  <defs>
+    <filter id="shadow" x="20" y="34" width="440" height="268" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="12" stdDeviation="13" flood-color="#4A382E" flood-opacity=".12"/>
+    </filter>
+  </defs>
+  <rect width="500" height="340" fill="transparent"/>
+  <g filter="url(#shadow)">
+    <rect x="76" y="226" width="348" height="24" rx="12" fill="#D8CDBF"/>
+    <rect x="106" y="126" width="88" height="100" rx="18" fill="#FFFDF8" stroke="#D8CDBF" stroke-width="6"/>
+    <path d="M130 162h40M130 190h32" stroke="#8A4B59" stroke-width="7" stroke-linecap="round"/>
+    <rect x="232" y="86" width="112" height="140" rx="22" fill="#F1EBE2" stroke="#D8CDBF" stroke-width="6"/>
+    <rect x="258" y="112" width="60" height="46" rx="12" fill="#D9EEF5" stroke="#FFFDF8" stroke-width="6"/>
+    <path d="M254 202c16-24 52-24 68 0" stroke="#745078" stroke-width="8" stroke-linecap="round"/>
+    <rect x="374" y="154" width="46" height="72" rx="13" fill="#D2F1ED" stroke="#2F685D" stroke-width="6"/>
+    <path d="M397 154c-26-30-14-62 24-78 10 36 0 64-24 78ZM397 154c-24-24-54-17-66 18 32 12 56 6 66-18Z" fill="#5D9475"/>
+  </g>
+  <circle cx="112" cy="72" r="7" fill="#C88A46" opacity=".7"/>
+  <circle cx="386" cy="92" r="6" fill="#8A4B59" opacity=".62"/>
+</svg>
