@@ -927,8 +927,8 @@
         setText("currentHotelTitle", res.hotelName);
         document.body.className = res.color || "theme-modern";
         switchView("hotelView");
-        fetchRoomsData();
         startAutoRefresh();
+        fetchRoomsData();
       }, { failureMessage: "登入驗證失敗。" });
     }
 
@@ -1283,7 +1283,8 @@
         setBusy(button, false);
         showToast("鑰匙已交付，房間準備好了。");
         switchView("hotelView");
-        fetchRoomsData();
+        fetchRoomsData(false);
+        window.setTimeout(() => fetchRoomsData(false), 1200);
       }, {
         failureMessage: "入住資料送出失敗。",
         onFailure: () => setBusy(button, false)
