@@ -641,10 +641,10 @@
         <p class="eyebrow">ADMIN</p>
         <h1 class="mt-2 text-3xl font-extrabold">教師總管登入</h1>
         <div class="mt-6 space-y-3">
-          <input id="adminPasswordInput" class="field" placeholder="輸入總管密碼" type="password">
+          <input id="adminPasswordInput" class="field" placeholder="使用教師 Google 帳號登入" type="text" disabled>
           <button class="btn btn-primary w-full px-4" type="button" onclick="adminLoginExecute()">
-            <span class="material-symbols-outlined">lock_open</span>
-            進入管理中心
+            <span class="material-symbols-outlined">account_circle</span>
+            Google 登入管理中心
           </button>
           <button class="btn btn-ghost w-full px-4" type="button" onclick="switchView('homeView')">返回首頁</button>
         </div>
@@ -1416,13 +1416,13 @@
     function adminLoginExecute() {
       runServer("verifyMasterAdmin", [], isValid => {
         if (!isValid) {
-          showToast("?? Google ?????????", "error");
+          showToast("這個 Google 帳號沒有教師權限。", "error");
           return;
         }
         byId("adminPasswordInput").value = "";
         renderAdminDashboard();
         switchView("adminDashboardView");
-      }, { failureMessage: "?? Google ?????" });
+      }, { failureMessage: "教師 Google 登入失敗。" });
     }
 
     function renderAdminDashboard() {

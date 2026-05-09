@@ -103,11 +103,25 @@ async function ensureTeacher() {
   if (auth.currentUser && adminEmails.includes(auth.currentUser.email || "")) {
     return true;
   }
-  const result = await signInWithPopup(auth, new GoogleAuthProvider());
+  let result;
+  try {
+    result = await signInWithPopup(auth, new GoogleAuthProvider());
+  } catch (error) {
+    if (error && error.code === "auth/unauthorized-domain") {
+      throw new Error("目前網址尚未加入 Firebase Authentication 授權網域，請把 GitHub Pages 網域加入 Authorized domains。");
+    }
+    if (error && error.code === "auth/popup-blocked") {
+      throw new Error("瀏覽器擋下 Google 登入彈窗，請允許彈窗後再試。");
+    }
+    if (error && error.code === "auth/popup-closed-by-user") {
+      throw new Error("Google 登入視窗已關閉，尚未完成登入。");
+    }
+    throw error;
+  }
   const email = result.user?.email || "";
   if (!adminEmails.includes(email)) {
     await signOut(auth);
-    throw new Error("這個 Google 帳號沒有教師權限。");
+    throw new Error(`這個 Google 帳號沒有教師權限：${email}`);
   }
   return true;
 }
@@ -226,12 +240,8 @@ async function addFeedback(roomId, senderName, feedbackText, hotelId = window.__
 }
 
 async function verifyMasterAdmin() {
-  try {
-    await ensureTeacher();
-    return true;
-  } catch (error) {
-    return false;
-  }
+  await ensureTeacher();
+  return true;
 }
 
 async function deleteHotel(hotelId) {
