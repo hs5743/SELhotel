@@ -313,6 +313,22 @@
       height: 1px;
       background: linear-gradient(90deg, transparent, var(--line), transparent);
     }
+    .hotel-theme-visual {
+      margin-top: 1rem;
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+      border-radius: 20px;
+      border: 1px solid rgba(234, 223, 210, .92);
+      background: var(--surface-soft);
+      box-shadow: 0 12px 24px rgba(92,64,45,.08);
+    }
+    .hotel-theme-visual img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
     @media (max-width: 1060px) {
       .home-layout { grid-template-columns: 1fr; }
       .home-hero { min-height: auto; }
@@ -642,6 +658,9 @@
         <aside class="space-y-4">
           <section class="panel p-5">
             <p class="eyebrow">HOTEL LOBBY</p>
+            <figure class="hotel-theme-visual" aria-label="飯店風格房間預覽">
+              <img id="hotelThemeImage" src="assets/v2/hotel-room-modern-v2.webp" alt="現代暖光風格飯店房間">
+            </figure>
             <h1 class="mt-2 break-words text-3xl font-extrabold" id="currentHotelTitle">飯店名稱</h1>
             <div class="mt-5 grid grid-cols-2 gap-3">
               <div class="subtle-panel p-4">
@@ -919,6 +938,25 @@
       tea: { name: "陶瓷茶杯", icon: "local_cafe", desc: "杯具", accent: "#7a5d39" }
     };
 
+    const hotelThemeVisuals = {
+      "theme-modern": {
+        src: "assets/v2/hotel-room-modern-v2.webp",
+        alt: "現代暖光風格飯店房間"
+      },
+      "theme-forest": {
+        src: "assets/v2/hotel-room-forest-v2.webp",
+        alt: "森林療癒風格飯店房間"
+      },
+      "theme-space": {
+        src: "assets/v2/hotel-room-space-v2.webp",
+        alt: "靜謐星空風格飯店房間"
+      },
+      "theme-magic": {
+        src: "assets/v2/hotel-room-magic-v2.webp",
+        alt: "暮色魔法風格飯店房間"
+      }
+    };
+
     window.addEventListener("load", () => {
       renderMoodTabs();
       renderMoodChips();
@@ -945,6 +983,14 @@
     function setText(id, value) {
       const el = byId(id);
       if (el) el.textContent = value == null || value === "" ? "" : String(value);
+    }
+
+    function setHotelThemeVisual(theme) {
+      const image = byId("hotelThemeImage");
+      if (!image) return;
+      const visual = hotelThemeVisuals[theme] || hotelThemeVisuals["theme-modern"];
+      image.src = visual.src;
+      image.alt = visual.alt;
     }
 
     function showToast(message, type = "info") {
@@ -981,6 +1027,7 @@
     function returnHome() {
       stopAutoRefresh();
       document.body.className = "theme-modern";
+      setHotelThemeVisual("theme-modern");
       switchView("homeView");
       loadInitialData();
     }
@@ -1048,6 +1095,7 @@
         state.currentRoomsDataString = "";
         setText("currentHotelTitle", res.hotelName);
         document.body.className = res.color || "theme-modern";
+        setHotelThemeVisual(res.color || "theme-modern");
         switchView("hotelView");
         startAutoRefresh();
         fetchRoomsData();
@@ -1060,6 +1108,7 @@
       window.__emotionHotelCurrentHotelId = "";
       state.currentRoomsDataString = "";
       document.body.className = "theme-modern";
+      setHotelThemeVisual("theme-modern");
       switchView("homeView");
       loadInitialData();
     }
