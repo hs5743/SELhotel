@@ -79,7 +79,7 @@ function mapRoom(docSnap) {
     message: data.message || "",
     roomColor: data.roomColor || "sakura",
     decor: data.decor || "simple",
-    floor: Math.max(1, Number(data.floor) || 1),
+    floor: normalizeFloor(data.floor),
     feedbackCount: Number(data.feedbackCount) || 0
   };
 }
@@ -94,9 +94,15 @@ function mapFeedback(docSnap) {
 
 function sortRooms(rooms) {
   return rooms.sort((a, b) => {
-    const floorDiff = Number(b.floor || 1) - Number(a.floor || 1);
+    const floorDiff = normalizeFloor(b.floor) - normalizeFloor(a.floor);
     return floorDiff || String(a.guestName || "").localeCompare(String(b.guestName || ""), "zh-Hant");
   });
+}
+
+function normalizeFloor(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 1;
+  return Math.max(-18, Math.min(1000, Math.trunc(numeric)));
 }
 
 async function ensureTeacher() {
@@ -190,7 +196,7 @@ async function checkInRoom(hotelId, guestName, mood, message, roomColor, decor, 
     message: sanitize(message, 180),
     roomColor: sanitize(roomColor, 32) || "sakura",
     decor: sanitize(decor, 32) || "simple",
-    floor: Math.max(1, Math.min(30, Number(floor) || 1)),
+    floor: normalizeFloor(floor),
     feedbackCount: 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()

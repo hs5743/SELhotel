@@ -623,8 +623,8 @@
               <div class="option-grid" id="roomDecorGrid"></div>
             </div>
             <label class="mt-5 block max-w-xs">
-              <span class="mb-2 block text-xs font-bold muted">想住樓層</span>
-              <input id="roomFloor" class="field" type="number" min="1" max="30" value="1">
+              <span class="mb-2 block text-xs font-bold muted">想住樓層（1000F 到 B18）</span>
+              <input id="roomFloor" class="field" type="number" min="-18" max="1000" step="1" value="1">
             </label>
           </section>
 
@@ -996,7 +996,7 @@
 
       const floors = {};
       rooms.forEach(room => {
-        const floor = Math.max(1, Number(room.floor) || 1);
+        const floor = normalizeFloor(room.floor);
         if (!floors[floor]) floors[floor] = [];
         floors[floor].push(room);
       });
@@ -1009,7 +1009,7 @@
         label.className = "flex items-center md:justify-center";
         const badge = document.createElement("span");
         badge.className = "rounded-full bg-[var(--surface-soft)] px-3 py-1 text-sm font-extrabold text-[var(--primary)]";
-        badge.textContent = floor + "F";
+        badge.textContent = formatFloorLabel(floor);
         label.appendChild(badge);
 
         const grid = document.createElement("div");
@@ -1020,6 +1020,18 @@
         row.appendChild(grid);
         building.appendChild(row);
       });
+    }
+
+    function normalizeFloor(value) {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) return 1;
+      return Math.max(-18, Math.min(1000, Math.trunc(numeric)));
+    }
+
+    function formatFloorLabel(floor) {
+      const normalized = normalizeFloor(floor);
+      if (normalized < 0) return "B" + Math.abs(normalized);
+      return normalized + "F";
     }
 
     function createRoomCard(room) {
