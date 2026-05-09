@@ -961,7 +961,8 @@
     }
 
     function fetchRoomsData(showLoading = true) {
-      if (showLoading) {
+      const building = byId("dynamicBuilding");
+      if (showLoading && building && !state.currentRoomsDataString) {
         byId("dynamicBuilding").innerHTML = '<p class="py-16 text-center font-bold muted">客房整理中...</p>';
       }
       runServer("getHotelRooms", [state.currentHotelId], handleRoomData, { failureMessage: "房間資料更新失敗。" });
@@ -971,11 +972,9 @@
       const normalizedRooms = Array.isArray(rooms) ? rooms : [];
       const newDataString = JSON.stringify(normalizedRooms);
       setText("lastRefreshText", "剛剛更新");
-      if (newDataString !== state.currentRoomsDataString) {
-        state.currentRoomsDataString = newDataString;
-        renderRoomsByFloor(normalizedRooms);
-        updateEmotionClimate(normalizedRooms);
-      }
+      state.currentRoomsDataString = newDataString;
+      renderRoomsByFloor(normalizedRooms);
+      updateEmotionClimate(normalizedRooms);
       if (state.currentRoomForModal) {
         const updatedRoom = normalizedRooms.find(room => room.roomId === state.currentRoomForModal.roomId);
         if (updatedRoom) state.currentRoomForModal = updatedRoom;
