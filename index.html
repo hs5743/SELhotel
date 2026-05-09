@@ -641,7 +641,6 @@
         <p class="eyebrow">ADMIN</p>
         <h1 class="mt-2 text-3xl font-extrabold">教師總管登入</h1>
         <div class="mt-6 space-y-3">
-          <input id="adminPasswordInput" class="field" placeholder="使用教師 Google 帳號登入" type="text" disabled>
           <button class="btn btn-primary w-full px-4" type="button" onclick="adminLoginExecute()">
             <span class="material-symbols-outlined">account_circle</span>
             Google 登入管理中心
@@ -1419,7 +1418,6 @@
           showToast("這個 Google 帳號沒有教師權限。", "error");
           return;
         }
-        byId("adminPasswordInput").value = "";
         renderAdminDashboard();
         switchView("adminDashboardView");
       }, { failureMessage: "教師 Google 登入失敗。" });
