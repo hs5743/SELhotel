@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SEL 情緒大飯店</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script src="./firebase-config.js"></script>
+  <script type="module" src="./firebase-client.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@300..700,0..1&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ["Noto Sans TC", "system-ui", "sans-serif"],
+            headline: ["Plus Jakarta Sans", "Noto Sans TC", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      --page: #f7f4ef;
+      --surface: #fffdf8;
+      --surface-soft: #f1ebe2;
+      --line: #ded5c8;
+      --ink: #26231f;
+      --muted: #6f675d;
+      --primary: #8a4b59;
+      --primary-strong: #6f3544;
+      --secondary: #2f685d;
+      --accent: #c88a46;
+      --shadow: 0 18px 48px rgba(64, 48, 35, .10);
+    }
+
+    body.theme-forest {
+      --page: #f1f5ed;
+      --surface-soft: #e5edde;
+      --primary: #44633f;
+      --primary-strong: #2f4c2b;
+      --secondary: #7a5d39;
+      --accent: #9b7d40;
+    }
+
+    body.theme-space {
+      --page: #f3f2f8;
+      --surface-soft: #e8e5f0;
+      --primary: #544776;
+      --primary-strong: #3d315c;
+      --secondary: #365e75;
+      --accent: #8b6fbd;
+    }
+
+    body.theme-magic {
+      --page: #f8f2ee;
+      --surface-soft: #efe5ef;
+      --primary: #745078;
+      --primary-strong: #57375b;
+      --secondary: #5e6f57;
+      --accent: #b2825e;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 8% 4%, rgba(255,255,255,.9), transparent 28rem),
+        radial-gradient(circle at 92% 10%, rgba(255,255,255,.68), transparent 26rem),
+        linear-gradient(180deg, var(--page), #ffffff 80%);
+      color: var(--ink);
+      font-family: "Noto Sans TC", system-ui, sans-serif;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 76px 0 auto 0;
+      height: 220px;
+      pointer-events: none;
+      opacity: .38;
+      background-image:
+        linear-gradient(90deg, transparent 0 10%, rgba(138, 75, 89, .08) 10% 10.5%, transparent 10.5% 22%),
+        radial-gradient(circle at 20% 60%, rgba(47, 104, 93, .12), transparent 2.5rem),
+        radial-gradient(circle at 80% 35%, rgba(200, 138, 70, .14), transparent 2.8rem);
+      z-index: -1;
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: "FILL" 0, "wght" 600, "GRAD" 0, "opsz" 24;
+      line-height: 1;
+    }
+
+    .shell { width: min(1180px, calc(100vw - 32px)); margin-inline: auto; }
+    .view-section { display: none; animation: rise .24s ease-out; }
+    .view-section.active { display: block; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel {
+      background: color-mix(in srgb, var(--surface) 94%, white);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .subtle-panel {
+      background: color-mix(in srgb, var(--surface-soft) 70%, white);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+
+    .btn {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      border-radius: 11px;
+      font-weight: 900;
+      transition: transform .15s ease, background .15s ease, opacity .15s ease, box-shadow .15s ease;
+    }
+    .btn:active { transform: translateY(1px) scale(.99); }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-strong); }
+    .btn-secondary { background: var(--secondary); color: white; }
+    .btn-ghost { border: 1px solid var(--line); background: rgba(255,255,255,.82); color: var(--ink); }
+    .btn-danger { background: #b64040; color: white; }
+    .field {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+      color: var(--ink);
+      padding: .92rem 1rem;
+      outline: none;
+    }
+    .field:focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 16%, transparent); }
+    .eyebrow { color: var(--primary); font-weight: 900; letter-spacing: .04em; font-size: .78rem; }
+    .muted { color: var(--muted); }
+
+    .home-layout {
+      display: grid;
+      gap: 1.25rem;
+      grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr);
+      align-items: stretch;
+    }
+    .home-hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 560px;
+      background:
+        radial-gradient(circle at 12% 14%, rgba(138, 75, 89, .10), transparent 12rem),
+        radial-gradient(circle at 86% 80%, rgba(47, 104, 93, .10), transparent 12rem),
+        linear-gradient(145deg, rgba(255,255,255,.96), rgba(255,253,248,.84));
+    }
+    .home-hero-mark {
+      width: 76px;
+      height: 76px;
+      border-radius: 22px;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: linear-gradient(145deg, var(--primary), var(--primary-strong));
+      box-shadow: 0 18px 34px color-mix(in srgb, var(--primary) 24%, transparent);
+    }
+    .home-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--line));
+      background: rgba(255,255,255,.72);
+      border-radius: 999px;
+      padding: .45rem .72rem;
+      font-size: .82rem;
+      font-weight: 900;
+      color: color-mix(in srgb, var(--primary) 82%, var(--ink));
+    }
+    .home-stat {
+      background: rgba(255,255,255,.72);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1rem;
+    }
+    .home-stat-icon {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--accent) 16%, white);
+      color: var(--accent);
+    }
+    .home-action-stack {
+      display: grid;
+      gap: 1.25rem;
+    }
+    .home-action-card {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,253,248,.9));
+    }
+    .home-action-icon {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      border-radius: 15px;
+      color: white;
+      box-shadow: 0 12px 28px rgba(64, 48, 35, .10);
+    }
+    .home-action-icon.student { background: var(--primary); }
+    .home-action-icon.teacher { background: var(--secondary); }
+    .home-section-line {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--line), transparent);
+    }
+    @media (max-width: 1060px) {
+      .home-layout { grid-template-columns: 1fr; }
+      .home-hero { min-height: auto; }
+    }
+
+    .mood-picker {
+      --mood-bg: #eef6ff;
+      --mood-border: #b7d8f3;
+      --mood-ink: #245f94;
+      background: var(--mood-bg);
+      border-color: var(--mood-border);
+    }
+    .mood-picker[data-mood="calm"] { --mood-bg: #fff0f5; --mood-border: #efbed1; --mood-ink: #9c4668; }
+    .mood-picker[data-mood="anxious"] { --mood-bg: #fff7dc; --mood-border: #e7ca75; --mood-ink: #8a6714; }
+    .mood-picker[data-mood="sad"] { --mood-bg: #f1eff9; --mood-border: #cfc7ea; --mood-ink: #5d548d; }
+
+    .mood-tab[aria-selected="true"] {
+      background: var(--mood-ink);
+      color: white;
+      border-color: var(--mood-ink);
+    }
+    .mood-chip {
+      border: 1px solid var(--mood-border);
+      border-radius: 999px;
+      background: rgba(255,255,255,.84);
+      padding: .55rem .82rem;
+      font-size: .92rem;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .mood-chip.selected {
+      background: var(--mood-ink);
+      border-color: var(--mood-ink);
+      color: white;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--mood-ink) 16%, transparent);
+    }
+
+    .option-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(136px, 1fr)); gap: .75rem; }
+    .color-option, .decor-option {
+      text-align: left;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.78);
+      border-radius: 12px;
+      padding: .72rem;
+      transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+    }
+    .color-option:hover, .decor-option:hover { transform: translateY(-1px); }
+    .color-option.selected, .decor-option.selected {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 14%, transparent);
+    }
+    .swatch {
+      height: 34px;
+      border-radius: 9px;
+      border: 1px solid rgba(38,35,31,.16);
+      background: linear-gradient(135deg, var(--wall), var(--floor));
+    }
+    .decor-icon {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--decor-accent, var(--primary)) 16%, white);
+      color: var(--decor-accent, var(--primary));
+    }
+
+    .building {
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.58), transparent 18%, transparent 82%, rgba(255,255,255,.58)),
+        var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .floor-row { border-top: 1px solid var(--line); }
+    .floor-row:first-child { border-top: 0; }
+
+    .room-card {
+      --wall: #f7d3dc;
+      --floor: #e8b6c2;
+      --trim: #9a5b6a;
+      min-height: 170px;
+      border: 1px solid rgba(60, 45, 36, .16);
+      border-radius: 14px;
+      background: linear-gradient(180deg, var(--wall) 0 64%, var(--floor) 64% 100%);
+      position: relative;
+      overflow: hidden;
+      transition: transform .16s ease, box-shadow .16s ease;
+    }
+    .room-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(42, 32, 27, .14);
+    }
+    .room-window {
+      width: 44px;
+      height: 34px;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,.92);
+      background:
+        linear-gradient(90deg, transparent 47%, rgba(255,255,255,.78) 47% 53%, transparent 53%),
+        linear-gradient(180deg, #dff3ff, #fff6c7);
+      box-shadow: inset 0 -8px 0 rgba(255,255,255,.32);
+    }
+    .room-rug {
+      position: absolute;
+      left: 16px;
+      bottom: 14px;
+      width: 76px;
+      height: 18px;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--trim) 36%, white);
+      opacity: .42;
+    }
+    .room-feedback-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .25rem;
+      min-width: 46px;
+      justify-content: center;
+      border-radius: 999px;
+      background: rgba(255,255,255,.86);
+      color: var(--trim);
+      border: 1px solid rgba(38,35,31,.12);
+      padding: .25rem .5rem;
+      font-size: .78rem;
+      font-weight: 900;
+    }
+    .room-feedback-badge.is-zero { opacity: .62; }
+
+    .modal-backdrop { background: rgba(27, 24, 21, .50); backdrop-filter: blur(8px); }
+    .feedback-list { max-height: 260px; overflow-y: auto; }
+    .room-modal-card {
+      --modal-wall: var(--surface-soft);
+      --modal-floor: var(--surface-soft);
+      --modal-trim: var(--primary);
+    }
+    .room-modal-header {
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--modal-wall) 86%, white), color-mix(in srgb, var(--modal-floor) 48%, white));
+      border-color: color-mix(in srgb, var(--modal-trim) 28%, var(--line));
+    }
+    .room-modal-chip {
+      background: color-mix(in srgb, var(--modal-wall) 38%, white);
+      border: 1px solid color-mix(in srgb, var(--modal-trim) 18%, transparent);
+      color: color-mix(in srgb, var(--modal-trim) 82%, var(--ink));
+    }
+    .room-modal-message {
+      border-left-color: var(--modal-trim);
+      background: color-mix(in srgb, var(--modal-wall) 18%, white);
+    }
+    .room-modal-message h3,
+    .room-modal-title {
+      color: color-mix(in srgb, var(--modal-trim) 84%, var(--ink));
+    }
+    .room-modal-feedback {
+      background: color-mix(in srgb, var(--modal-floor) 26%, white);
+      border-color: color-mix(in srgb, var(--modal-trim) 18%, var(--line));
+    }
+    .room-modal-send {
+      background: var(--modal-trim);
+      color: white;
+    }
+
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 20px, 1180px); }
+      .room-card { min-height: 160px; }
+    }
+  </style>
+</head>
+<body class="theme-modern">
+  <header class="sticky top-0 z-40 border-b border-[var(--line)] bg-white/88 backdrop-blur">
+    <div class="shell flex items-center justify-between py-3">
+      <button class="flex items-center gap-3 text-left" type="button" onclick="returnHome()">
+        <span class="grid h-10 w-10 place-items-center rounded-[10px] bg-[var(--primary)] text-white">
+          <span class="material-symbols-outlined">hotel</span>
+        </span>
+        <span>
+          <span class="block font-headline text-lg font-extrabold leading-tight">SEL 情緒大飯店</span>
+          <span class="block text-xs font-semibold muted">安全、接納、彼此支持</span>
+        </span>
+      </button>
+      <button class="btn btn-ghost px-3 md:px-4" type="button" onclick="showAdminLogin()">
+        <span class="material-symbols-outlined">admin_panel_settings</span>
+        <span class="hidden sm:inline">教師後台</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="shell py-6 md:py-10" id="mainContent">
+    <section class="view-section active" id="homeView">
+      <div class="home-layout">
+        <div class="panel home-hero p-6 md:p-8">
+          <div class="flex flex-col justify-between gap-10 md:h-full">
+            <div>
+              <div class="flex items-center gap-4">
+                <span class="home-hero-mark">
+                  <span class="material-symbols-outlined text-4xl">hotel</span>
+                </span>
+                <div>
+                  <p class="eyebrow">CLASSROOM CHECK-IN</p>
+                  <p class="mt-1 text-sm font-bold muted">一個讓情緒被看見、被安放的班級空間</p>
+                </div>
+              </div>
+              <h1 class="mt-8 max-w-2xl font-headline text-[clamp(2.5rem,5vw,4.7rem)] font-extrabold leading-[1.04]">今天，把情緒安放在一間房裡。</h1>
+              <p class="mt-5 max-w-2xl text-lg leading-8 muted">學生可以入住自己的情緒房間，留下當下的心情；同學和老師可以用溫暖信箱給予回饋。</p>
+              <div class="mt-6 flex flex-wrap gap-2">
+                <span class="home-pill"><span class="material-symbols-outlined text-[18px]">lock</span>課程密碼進入</span>
+                <span class="home-pill"><span class="material-symbols-outlined text-[18px]">routine</span>情緒氣象</span>
+                <span class="home-pill"><span class="material-symbols-outlined text-[18px]">forum</span>同儕回饋</span>
+              </div>
+            </div>
+
+            <div class="grid gap-3 sm:grid-cols-3">
+              <div class="home-stat">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-black muted">營運飯店</span>
+                  <span class="home-stat-icon"><span class="material-symbols-outlined text-[20px]">apartment</span></span>
+                </div>
+                <span class="mt-3 block text-3xl font-extrabold text-[var(--primary)]" id="homeHotelCount">0</span>
+              </div>
+              <div class="home-stat">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-black muted">情緒氣象</span>
+                  <span class="home-stat-icon text-[var(--secondary)]" style="background:color-mix(in srgb, var(--secondary) 14%, white)"><span class="material-symbols-outlined text-[20px]">routine</span></span>
+                </div>
+                <span class="mt-3 block text-lg font-extrabold">看見班級狀態</span>
+              </div>
+              <div class="home-stat">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-black muted">溫暖回饋</span>
+                  <span class="home-stat-icon"><span class="material-symbols-outlined text-[20px]">forum</span></span>
+                </div>
+                <span class="mt-3 block text-lg font-extrabold">留下支持語句</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="home-action-stack">
+        <section class="panel home-action-card p-5 md:p-6">
+          <div class="flex items-start gap-3">
+            <span class="home-action-icon student">
+              <span class="material-symbols-outlined">key</span>
+            </span>
+            <div>
+              <h2 class="text-2xl font-extrabold">學生入住</h2>
+              <p class="mt-1 text-sm leading-6 muted">選擇班級飯店並輸入課程密碼。</p>
+            </div>
+          </div>
+          <div class="mt-6 space-y-3">
+            <select id="hotelSelect" class="field">
+              <option value="">載入飯店中...</option>
+            </select>
+            <input id="passcodeInput" class="field" placeholder="課程密碼" type="password" autocomplete="current-password">
+            <button class="btn btn-primary w-full px-4" type="button" onclick="login()">
+              <span class="material-symbols-outlined">login</span>
+              進入大廳
+              </button>
+            </div>
+          </section>
+
+        <div class="home-section-line"></div>
+
+        <section class="panel home-action-card p-5 md:p-6">
+          <div class="flex items-start gap-3">
+            <span class="home-action-icon teacher">
+              <span class="material-symbols-outlined">add_business</span>
+            </span>
+            <div>
+              <h2 class="text-2xl font-extrabold">教師建立</h2>
+              <p class="mt-1 text-sm leading-6 muted">為一堂課建立新的情緒飯店。</p>
+            </div>
+          </div>
+          <div class="mt-6 space-y-3">
+            <input id="newHotelName" class="field" placeholder="飯店名稱，例如：五年二班情緒大廳" type="text">
+            <input id="newHotelPasscode" class="field" placeholder="設定課程密碼" type="text">
+            <select id="newHotelTheme" class="field">
+              <option value="theme-modern">現代暖光</option>
+              <option value="theme-forest">森林療癒</option>
+              <option value="theme-space">靜謐星空</option>
+              <option value="theme-magic">暮色魔法</option>
+            </select>
+            <button class="btn btn-secondary w-full px-4" type="button" onclick="createNewHotel(event)">
+              <span class="material-symbols-outlined">domain_add</span>
+              建立飯店
+            </button>
+          </div>
+        </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="view-section" id="hotelView">
+      <div class="grid gap-5 lg:grid-cols-[320px_1fr]">
+        <aside class="space-y-4">
+          <section class="panel p-5">
+            <p class="eyebrow">HOTEL LOBBY</p>
+            <h1 class="mt-2 break-words text-3xl font-extrabold" id="currentHotelTitle">飯店名稱</h1>
+            <div class="mt-5 grid grid-cols-2 gap-3">
+              <div class="subtle-panel p-4">
+                <span class="text-xs font-bold muted">入住人數</span>
+                <strong class="mt-1 block text-3xl text-[var(--primary)]" id="roomCountText">0</strong>
+              </div>
+              <div class="subtle-panel p-4">
+                <span class="text-xs font-bold muted">主要情緒</span>
+                <strong class="mt-1 block truncate text-lg text-[var(--secondary)]" id="dominantMoodText">尚無</strong>
+              </div>
+            </div>
+            <div class="mt-5 flex flex-col gap-2">
+              <button class="btn btn-primary px-4" type="button" onclick="showCheckInForm()">
+                <span class="material-symbols-outlined">person_add</span>
+                辦理入住
+              </button>
+              <button class="btn btn-ghost px-4" type="button" onclick="leaveHotel()">
+                <span class="material-symbols-outlined">logout</span>
+                離開大廳
+              </button>
+            </div>
+          </section>
+
+          <section class="panel p-5" id="emotionClimateBoard">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="text-lg font-extrabold">情緒氣象台</h2>
+              <span class="material-symbols-outlined text-[var(--primary)]">routine</span>
+            </div>
+            <div class="mt-4 h-3 overflow-hidden rounded-full bg-[var(--surface-soft)]">
+              <div class="flex h-full">
+                <div id="climateBarHappy" class="bg-[#5d8cc1]" style="width:0%"></div>
+                <div id="climateBarCalm" class="bg-[#d16c91]" style="width:0%"></div>
+                <div id="climateBarAnxious" class="bg-[#d6ad45]" style="width:0%"></div>
+                <div id="climateBarSad" class="bg-[#7c6ead]" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="mt-4 space-y-2 text-sm" id="climateRows"></div>
+          </section>
+        </aside>
+
+        <section class="building">
+          <div class="flex items-center justify-between border-b border-[var(--line)] bg-[var(--surface-soft)] px-4 py-3">
+            <h2 class="font-extrabold">房間牆</h2>
+            <span class="text-sm font-bold muted" id="lastRefreshText">等待更新</span>
+          </div>
+          <div class="min-h-[500px] p-4 md:p-5" id="dynamicBuilding">
+            <p class="py-16 text-center font-bold muted">客房整理中...</p>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="view-section" id="checkInView">
+      <div class="mx-auto max-w-5xl panel p-5 md:p-8">
+        <div class="flex flex-col gap-4 border-b border-[var(--line)] pb-5 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p class="eyebrow">CHECK-IN FORM</p>
+            <h1 class="mt-2 text-3xl font-extrabold">辦理入住手續</h1>
+            <p class="mt-2 muted">用簡短的方式記錄當下，也讓同學知道如何陪伴你。</p>
+          </div>
+          <button class="btn btn-ghost px-4" type="button" onclick="switchView('hotelView')">
+            <span class="material-symbols-outlined">arrow_back</span>
+            返回大廳
+          </button>
+        </div>
+
+        <div class="mt-6 grid gap-5">
+          <section class="subtle-panel p-4 md:p-5">
+            <label class="block text-sm font-extrabold text-[var(--primary)]" for="guestName">1. 你的名字 / 暱稱</label>
+            <input id="guestName" class="field mt-3" placeholder="例如：安靜的星星" type="text" maxlength="24">
+          </section>
+
+          <section class="subtle-panel mood-picker p-4 md:p-5" id="moodPicker" data-mood="happy">
+            <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <label class="text-sm font-extrabold" style="color:var(--mood-ink)">2. 現在的心情天氣</label>
+              <span id="selectedMoodLabel" class="rounded-full bg-white px-3 py-1 text-sm font-bold muted">尚未選擇</span>
+            </div>
+            <input id="guestMood" type="hidden" value="">
+            <div class="mt-4 flex gap-2 overflow-x-auto pb-1" id="moodTabs"></div>
+            <div class="mt-4 flex flex-wrap gap-2" id="moodChipGrid"></div>
+          </section>
+
+          <section class="subtle-panel p-4 md:p-5">
+            <label class="block text-sm font-extrabold text-[var(--primary)]" for="guestMessage">3. 想掛在房門口的一句話</label>
+            <textarea id="guestMessage" class="field mt-3 min-h-[112px]" maxlength="180" placeholder="今天我想被怎麼陪伴？或想讓大家知道什麼？"></textarea>
+          </section>
+
+          <section class="subtle-panel p-4 md:p-5">
+            <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <h2 class="text-sm font-extrabold text-[var(--primary)]">4. 房間設定</h2>
+              <span class="text-sm font-bold muted">顏色與裝飾會出現在房間牆與個人房間。</span>
+            </div>
+            <input id="roomColor" type="hidden" value="sakura">
+            <input id="roomDecor" type="hidden" value="plant">
+            <div class="mt-4">
+              <h3 class="mb-2 text-xs font-extrabold uppercase muted">房間主色</h3>
+              <div class="option-grid" id="roomColorGrid"></div>
+            </div>
+            <div class="mt-5">
+              <h3 class="mb-2 text-xs font-extrabold uppercase muted">房間裝飾</h3>
+              <div class="option-grid" id="roomDecorGrid"></div>
+            </div>
+            <label class="mt-5 block max-w-xs">
+              <span class="mb-2 block text-xs font-bold muted">想住樓層</span>
+              <input id="roomFloor" class="field" type="number" min="1" max="30" value="1">
+            </label>
+          </section>
+
+          <button class="btn btn-primary min-h-[54px] w-full px-4 text-lg" type="button" onclick="submitCheckIn(event)">
+            <span class="material-symbols-outlined">vpn_key</span>
+            領取鑰匙，入住房間
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="view-section" id="adminLoginView">
+      <div class="mx-auto max-w-md panel p-6 md:p-8">
+        <p class="eyebrow">ADMIN</p>
+        <h1 class="mt-2 text-3xl font-extrabold">教師總管登入</h1>
+        <div class="mt-6 space-y-3">
+          <input id="adminPasswordInput" class="field" placeholder="輸入總管密碼" type="password">
+          <button class="btn btn-primary w-full px-4" type="button" onclick="adminLoginExecute()">
+            <span class="material-symbols-outlined">lock_open</span>
+            進入管理中心
+          </button>
+          <button class="btn btn-ghost w-full px-4" type="button" onclick="switchView('homeView')">返回首頁</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="view-section" id="adminDashboardView">
+      <div class="panel overflow-hidden">
+        <div class="flex flex-col gap-3 border-b border-[var(--line)] bg-[var(--surface-soft)] p-5 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p class="eyebrow">MANAGEMENT</p>
+            <h1 class="mt-1 text-3xl font-extrabold">飯店總管中心</h1>
+          </div>
+          <button class="btn btn-ghost px-4" type="button" onclick="adminLogout()">
+            <span class="material-symbols-outlined">logout</span>
+            安全登出
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[620px] text-left">
+            <thead class="border-b border-[var(--line)] text-sm muted">
+              <tr>
+                <th class="px-5 py-3">飯店名稱</th>
+                <th class="px-5 py-3">ID 短碼</th>
+                <th class="px-5 py-3">狀態</th>
+                <th class="px-5 py-3 text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody id="adminHotelList"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="fixed inset-0 z-50 hidden items-center justify-center p-3 modal-backdrop" id="roomModal">
+    <section class="panel room-modal-card flex max-h-[94vh] w-full max-w-3xl flex-col overflow-hidden" id="roomModalCard">
+      <div class="room-modal-header flex items-start justify-between gap-4 border-b p-5">
+        <div>
+          <p class="room-modal-title text-xs font-black tracking-[.08em]">ROOM NOTE</p>
+          <h2 class="mt-1 break-words text-3xl font-extrabold" id="modalName">姓名</h2>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span class="room-modal-chip rounded-full px-3 py-1 text-sm font-bold" id="modalMood">心情</span>
+            <span class="room-modal-chip rounded-full px-3 py-1 text-sm font-bold" id="modalDecor">裝飾</span>
+            <span class="room-modal-chip rounded-full px-3 py-1 text-sm font-bold" id="modalColorName">房間色</span>
+          </div>
+        </div>
+        <button class="btn btn-ghost h-11 w-11 px-0" type="button" onclick="closeModal()" aria-label="關閉">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="overflow-y-auto p-5">
+        <div>
+          <article class="room-modal-message rounded-[12px] border-l-4 p-4">
+            <h3 class="text-sm font-extrabold">房門留言</h3>
+            <p class="mt-2 whitespace-pre-wrap break-words leading-7" id="modalMessage">想說的話...</p>
+          </article>
+        </div>
+
+        <section class="mt-5">
+          <div class="flex items-center justify-between">
+            <h3 class="font-extrabold">溫暖信箱</h3>
+            <span class="text-sm font-bold muted" id="feedbackCountText">0 則回饋</span>
+          </div>
+          <div class="feedback-list room-modal-feedback mt-3 space-y-3 rounded-[10px] border p-3" id="feedbackListContainer"></div>
+        </section>
+      </div>
+      <div class="border-t border-[var(--line)] bg-white p-4">
+        <div class="grid gap-2 md:grid-cols-[150px_1fr_48px]">
+          <input id="feedbackSender" class="field" placeholder="署名" type="text" maxlength="20">
+          <input id="feedbackText" class="field" placeholder="寫一句溫暖的回饋..." type="text" maxlength="120">
+          <button class="btn room-modal-send h-12 px-0" type="button" onclick="sendFeedback(event)" aria-label="送出">
+            <span class="material-symbols-outlined">send</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="fixed bottom-4 left-1/2 z-[60] hidden w-[min(94vw,560px)] -translate-x-1/2 rounded-[10px] border border-[var(--line)] bg-white px-4 py-3 text-sm font-bold shadow-lg" id="toast"></div>
+
+  <footer class="shell pb-8 text-center text-sm muted">
+    © SEL Emotion Hotel designed for Education
+  </footer>
+
+  <script>
+    const state = {
+      currentHotelId: "",
+      currentRoomIdForFeedback: "",
+      currentRoomForModal: null,
+      allHotels: [],
+      refreshInterval: null,
+      currentRoomsDataString: "",
+      activeMoodCategory: "happy"
+    };
+
+    const moodGroups = {
+      happy: {
+        label: "愉快好心情",
+        icon: "藍",
+        legacyPrefix: "🔵",
+        words: ["令人愉快", "幸福的", "有希望的", "興奮的", "開心的", "驕傲的", "感恩的", "樂觀的", "有動力的", "受到啟發", "愉悅的", "驚喜的"]
+      },
+      calm: {
+        label: "靜靜好舒服",
+        icon: "粉",
+        legacyPrefix: "🌸",
+        words: ["自在的", "充滿愛的", "心滿意足", "平靜的", "隨和的", "安全的", "寧靜的", "放鬆的", "冷靜的", "柔和的", "平和的", "舒服的"]
+      },
+      anxious: {
+        label: "緊張小心臟",
+        icon: "黃",
+        legacyPrefix: "🟡",
+        words: ["困擾的", "忐忑不安", "擔心的", "焦慮的", "生氣的", "緊張的", "受到驚嚇", "坐立難安", "神經緊繃", "壓力很大", "錯愕的", "震驚的"]
+      },
+      sad: {
+        label: "心情灰灰的",
+        icon: "紫",
+        legacyPrefix: "🟣",
+        words: ["失望的", "低落的", "洩氣的", "難過的", "無聊的", "疲累的", "疏離的", "孤單的", "悶悶不樂", "心灰意冷", "消沉的", "無望的"]
+      }
+    };
+
+    const roomColorOptions = {
+      sakura: { name: "櫻花粉", wall: "#f8d7df", floor: "#edb9c7", trim: "#9a5264" },
+      lemon: { name: "檸檬黃", wall: "#fbf1bd", floor: "#ead77d", trim: "#9a7a20" },
+      glacier: { name: "冰川藍", wall: "#d9eef5", floor: "#a9d6e4", trim: "#34738a" },
+      mint: { name: "薄荷綠", wall: "#dbefd9", floor: "#b9ddb8", trim: "#4d7b4f" },
+      lavender: { name: "薰衣草紫", wall: "#e8def8", floor: "#cdbcec", trim: "#66528f" },
+      peach: { name: "蜜桃橘", wall: "#ffe0c5", floor: "#f4b786", trim: "#a45e30" },
+      ocean: { name: "海灣青", wall: "#d2f1ed", floor: "#9ed8d1", trim: "#2e746c" },
+      cream: { name: "奶油白", wall: "#fff8df", floor: "#eadfbf", trim: "#806e45" },
+      berry: { name: "莓果紅", wall: "#f2c7d4", floor: "#dc91a9", trim: "#8f3f5d" },
+      sky: { name: "晴空藍", wall: "#dbeafe", floor: "#a9c8f5", trim: "#3d69a4" },
+      meadow: { name: "草地綠", wall: "#e5f4c9", floor: "#bddd83", trim: "#627f2f" },
+      dusk: { name: "暮色灰紫", wall: "#e4e0eb", floor: "#c3bbd2", trim: "#5c526f" }
+    };
+
+    const decorOptions = {
+      simple: { name: "保持簡潔", icon: "checkroom", desc: "簡潔房間", accent: "#6f675d" },
+      plant: { name: "綠色盆栽", icon: "potted_plant", desc: "植物", accent: "#4d7b4f" },
+      desk: { name: "木質書桌", icon: "menu_book", desc: "家具", accent: "#5d6d89" },
+      lamp: { name: "暖光小燈", icon: "light", desc: "燈具", accent: "#b98238" },
+      pillow: { name: "柔軟抱枕", icon: "bedroom_parent", desc: "布品", accent: "#9a5264" },
+      window: { name: "星空窗景", icon: "nightlight", desc: "窗景", accent: "#66528f" },
+      badge: { name: "金色徽章", icon: "workspace_premium", desc: "徽章", accent: "#b06b2d" },
+      music: { name: "音符擺飾", icon: "music_note", desc: "擺飾", accent: "#2e746c" },
+      art: { name: "彩色畫框", icon: "palette", desc: "畫框", accent: "#8f3f5d" },
+      rain: { name: "雨滴窗台", icon: "water_drop", desc: "窗台", accent: "#34738a" },
+      compass: { name: "復古羅盤", icon: "explore", desc: "羅盤", accent: "#7a6934" },
+      tea: { name: "陶瓷茶杯", icon: "local_cafe", desc: "杯具", accent: "#7a5d39" }
+    };
+
+    window.addEventListener("load", () => {
+      renderMoodTabs();
+      renderMoodChips();
+      renderRoomOptions();
+      loadInitialData();
+    });
+
+    async function runServer(methodName, args, onSuccess, options = {}) {
+      const failureMessage = options.failureMessage || "Google ?????????????";
+      try {
+        if (!window.emotionHotelApi || typeof window.emotionHotelApi[methodName] !== "function") {
+          throw new Error("Firebase ?????????????");
+        }
+        const result = await window.emotionHotelApi[methodName](...args);
+        if (typeof onSuccess === "function") onSuccess(result);
+      } catch (error) {
+        console.error(error);
+        showToast(failureMessage + " " + (error && error.message ? error.message : ""), "error");
+        if (typeof options.onFailure === "function") options.onFailure(error);
+      }
+    }
+
+    function byId(id) { return document.getElementById(id); }
+    function setText(id, value) {
+      const el = byId(id);
+      if (el) el.textContent = value == null || value === "" ? "" : String(value);
+    }
+
+    function showToast(message, type = "info") {
+      const toast = byId("toast");
+      toast.textContent = message;
+      toast.style.borderColor = type === "error" ? "#cc6b6b" : "var(--line)";
+      toast.classList.remove("hidden");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toast.classList.add("hidden"), 3600);
+    }
+
+    function setBusy(button, isBusy, busyText) {
+      if (!button) return;
+      if (isBusy) {
+        button.dataset.originalHtml = button.innerHTML;
+        button.disabled = true;
+        button.style.opacity = ".72";
+        button.textContent = busyText || "處理中...";
+      } else {
+        button.disabled = false;
+        button.style.opacity = "";
+        if (button.dataset.originalHtml) button.innerHTML = button.dataset.originalHtml;
+      }
+    }
+
+    function switchView(viewId) {
+      ["homeView", "hotelView", "checkInView", "adminLoginView", "adminDashboardView"].forEach(id => {
+        const el = byId(id);
+        if (el) el.classList.toggle("active", id === viewId);
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function returnHome() {
+      stopAutoRefresh();
+      document.body.className = "theme-modern";
+      switchView("homeView");
+      loadInitialData();
+    }
+
+    function loadInitialData() {
+      runServer("getHotelList", [], populateHotelSelect, { failureMessage: "飯店清單載入失敗。" });
+    }
+
+    function populateHotelSelect(hotels) {
+      state.allHotels = Array.isArray(hotels) ? hotels : [];
+      setText("homeHotelCount", state.allHotels.length);
+      const select = byId("hotelSelect");
+      select.innerHTML = "";
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = state.allHotels.length ? "請選擇想入住的飯店..." : "目前尚無飯店";
+      select.appendChild(placeholder);
+      state.allHotels.forEach(hotel => {
+        const option = document.createElement("option");
+        option.value = hotel.id;
+        option.textContent = hotel.name;
+        select.appendChild(option);
+      });
+    }
+
+    function createNewHotel(event) {
+      const button = event.currentTarget;
+      const name = byId("newHotelName").value.trim();
+      const pass = byId("newHotelPasscode").value.trim();
+      const theme = byId("newHotelTheme").value;
+      if (!name || !pass) {
+        showToast("請填寫飯店名稱與課程密碼。", "error");
+        return;
+      }
+
+      setBusy(button, true, "建立中...");
+      runServer("createHotel", [name, theme, "無", pass], () => {
+        byId("newHotelName").value = "";
+        byId("newHotelPasscode").value = "";
+        setBusy(button, false);
+        showToast("飯店已建立，請將課程密碼分享給學生。");
+        loadInitialData();
+      }, {
+        failureMessage: "建立飯店失敗。",
+        onFailure: () => setBusy(button, false)
+      });
+    }
+
+    function login() {
+      const hotelId = byId("hotelSelect").value;
+      const pass = byId("passcodeInput").value;
+      if (!hotelId || !pass) {
+        showToast("請選擇飯店並輸入課程密碼。", "error");
+        return;
+      }
+
+      runServer("verifyPasscode", [hotelId, pass], res => {
+        byId("passcodeInput").value = "";
+        if (!res || !res.success) {
+          showToast(res && res.msg ? res.msg : "登入失敗。", "error");
+          return;
+        }
+        state.currentHotelId = res.hotelId;
+        window.__emotionHotelCurrentHotelId = res.hotelId;
+        state.currentRoomsDataString = "";
+        setText("currentHotelTitle", res.hotelName);
+        document.body.className = res.color || "theme-modern";
+        switchView("hotelView");
+        fetchRoomsData();
+        startAutoRefresh();
+      }, { failureMessage: "登入驗證失敗。" });
+    }
+
+    function leaveHotel() {
+      stopAutoRefresh();
+      state.currentHotelId = "";
+      window.__emotionHotelCurrentHotelId = "";
+      state.currentRoomsDataString = "";
+      document.body.className = "theme-modern";
+      switchView("homeView");
+      loadInitialData();
+    }
+
+    function startAutoRefresh() {
+      stopAutoRefresh();
+      if (!state.currentHotelId || !window.emotionHotelApi || !window.emotionHotelApi.subscribeHotelRooms) return;
+      state.refreshInterval = window.emotionHotelApi.subscribeHotelRooms(state.currentHotelId, rooms => {
+        setText("lastRefreshText", "????");
+        handleRoomData(rooms);
+      }, error => {
+        console.error(error);
+        showToast("?????????" + (error && error.message ? " " + error.message : ""), "error");
+      });
+    }
+
+    function stopAutoRefresh() {
+      if (typeof state.refreshInterval === "function") state.refreshInterval();
+      else if (state.refreshInterval) window.clearInterval(state.refreshInterval);
+      state.refreshInterval = null;
+    }
+
+    function fetchRoomsData(showLoading = true) {
+      if (showLoading) {
+        byId("dynamicBuilding").innerHTML = '<p class="py-16 text-center font-bold muted">客房整理中...</p>';
+      }
+      runServer("getHotelRooms", [state.currentHotelId], handleRoomData, { failureMessage: "房間資料更新失敗。" });
+    }
+
+    function handleRoomData(rooms) {
+      const normalizedRooms = Array.isArray(rooms) ? rooms : [];
+      const newDataString = JSON.stringify(normalizedRooms);
+      setText("lastRefreshText", "剛剛更新");
+      if (newDataString !== state.currentRoomsDataString) {
+        state.currentRoomsDataString = newDataString;
+        renderRoomsByFloor(normalizedRooms);
+        updateEmotionClimate(normalizedRooms);
+      }
+      if (state.currentRoomForModal) {
+        const updatedRoom = normalizedRooms.find(room => room.roomId === state.currentRoomForModal.roomId);
+        if (updatedRoom) state.currentRoomForModal = updatedRoom;
+      }
+    }
+
+    function renderRoomsByFloor(rooms) {
+      const building = byId("dynamicBuilding");
+      building.innerHTML = "";
+      setText("roomCountText", rooms.length);
+
+      if (rooms.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "py-16 text-center text-lg font-bold muted";
+        empty.textContent = "目前還沒有房間，邀請第一位學生入住吧。";
+        building.appendChild(empty);
+        return;
+      }
+
+      const floors = {};
+      rooms.forEach(room => {
+        const floor = Math.max(1, Number(room.floor) || 1);
+        if (!floors[floor]) floors[floor] = [];
+        floors[floor].push(room);
+      });
+
+      Object.keys(floors).map(Number).sort((a, b) => b - a).forEach(floor => {
+        const row = document.createElement("section");
+        row.className = "floor-row grid gap-3 py-4 md:grid-cols-[70px_1fr]";
+
+        const label = document.createElement("div");
+        label.className = "flex items-center md:justify-center";
+        const badge = document.createElement("span");
+        badge.className = "rounded-full bg-[var(--surface-soft)] px-3 py-1 text-sm font-extrabold text-[var(--primary)]";
+        badge.textContent = floor + "F";
+        label.appendChild(badge);
+
+        const grid = document.createElement("div");
+        grid.className = "grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4";
+        floors[floor].forEach(room => grid.appendChild(createRoomCard(room)));
+
+        row.appendChild(label);
+        row.appendChild(grid);
+        building.appendChild(row);
+      });
+    }
+
+    function createRoomCard(room) {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "room-card flex flex-col justify-between p-3 text-left";
+      applyRoomColor(card, room.roomColor);
+      card.addEventListener("click", () => openRoomModal(room));
+
+      const decor = resolveDecor(room.decor);
+      const moodData = parseMood(room.mood);
+      const feedbackCount = Number(room.feedbackCount) || 0;
+
+      const top = document.createElement("div");
+      top.className = "relative z-10 flex items-center justify-between gap-2";
+      const windowEl = document.createElement("span");
+      windowEl.className = "room-window";
+      const decorWrap = document.createElement("span");
+      decorWrap.className = "decor-icon";
+      decorWrap.style.setProperty("--decor-accent", decor.accent);
+      const decorIcon = document.createElement("span");
+      decorIcon.className = "material-symbols-outlined";
+      decorIcon.textContent = decor.icon;
+      decorWrap.appendChild(decorIcon);
+      top.appendChild(windowEl);
+      top.appendChild(decorWrap);
+
+      const middle = document.createElement("div");
+      middle.className = "relative z-10 min-h-[64px] py-2";
+      const name = document.createElement("p");
+      name.className = "truncate text-xl font-extrabold leading-tight";
+      name.textContent = room.guestName || "未署名";
+      middle.appendChild(name);
+
+      const bottom = document.createElement("div");
+      bottom.className = "relative z-10 flex items-end justify-between gap-2";
+      const details = document.createElement("div");
+      details.className = "min-w-0 flex-1";
+      const mood = document.createElement("p");
+      mood.className = "truncate text-sm font-extrabold";
+      mood.textContent = moodData.word || "未選心情";
+      const decorText = document.createElement("p");
+      decorText.className = "mt-1 truncate text-xs font-bold muted";
+      decorText.textContent = decor.name;
+      details.appendChild(mood);
+      details.appendChild(decorText);
+
+      const rug = document.createElement("span");
+      rug.className = "room-rug";
+
+      const feedback = document.createElement("span");
+      feedback.className = "room-feedback-badge" + (feedbackCount === 0 ? " is-zero" : "");
+      const feedbackIcon = document.createElement("span");
+      feedbackIcon.className = "material-symbols-outlined text-[15px]";
+      feedbackIcon.textContent = "forum";
+      const feedbackText = document.createElement("span");
+      feedbackText.textContent = feedbackCount;
+      feedback.appendChild(feedbackIcon);
+      feedback.appendChild(feedbackText);
+      bottom.appendChild(details);
+      bottom.appendChild(feedback);
+
+      card.appendChild(top);
+      card.appendChild(middle);
+      card.appendChild(bottom);
+      card.appendChild(rug);
+      return card;
+    }
+
+    function parseMood(mood) {
+      const value = String(mood || "");
+      const key = Object.keys(moodGroups).find(groupKey => {
+        const group = moodGroups[groupKey];
+        return value.startsWith(group.icon + "｜") || value.startsWith(group.legacyPrefix + " ");
+      });
+      if (!key) return { categoryKey: "", categoryLabel: "心情", word: value };
+      const group = moodGroups[key];
+      const word = value
+        .replace(group.icon + "｜", "")
+        .replace(group.legacyPrefix + " ", "");
+      return { categoryKey: key, categoryLabel: group.label, word };
+    }
+
+    function updateEmotionClimate(rooms) {
+      const counts = { happy: 0, calm: 0, anxious: 0, sad: 0 };
+      rooms.forEach(room => {
+        const key = parseMood(room.mood).categoryKey;
+        if (key && counts[key] !== undefined) counts[key]++;
+      });
+
+      const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+      const pct = count => total ? Math.round((count / total) * 100) : 0;
+      const ordered = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+      setText("dominantMoodText", total ? moodGroups[ordered[0]].label : "尚無");
+
+      byId("climateBarHappy").style.width = pct(counts.happy) + "%";
+      byId("climateBarCalm").style.width = pct(counts.calm) + "%";
+      byId("climateBarAnxious").style.width = pct(counts.anxious) + "%";
+      byId("climateBarSad").style.width = pct(counts.sad) + "%";
+
+      const rows = byId("climateRows");
+      rows.innerHTML = "";
+      Object.keys(moodGroups).forEach(key => {
+        const row = document.createElement("div");
+        row.className = "flex items-center justify-between gap-3";
+        const label = document.createElement("span");
+        label.className = "font-bold";
+        label.textContent = moodGroups[key].label;
+        const value = document.createElement("span");
+        value.className = "font-extrabold";
+        value.textContent = counts[key] + " 人 (" + pct(counts[key]) + "%)";
+        row.appendChild(label);
+        row.appendChild(value);
+        rows.appendChild(row);
+      });
+    }
+
+    function renderMoodTabs() {
+      const tabs = byId("moodTabs");
+      tabs.innerHTML = "";
+      const picker = byId("moodPicker");
+      if (picker) picker.dataset.mood = state.activeMoodCategory;
+      Object.keys(moodGroups).forEach(key => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "mood-tab shrink-0 rounded-full border border-[var(--mood-border)] bg-white px-4 py-2 text-sm font-extrabold";
+        button.setAttribute("aria-selected", key === state.activeMoodCategory ? "true" : "false");
+        button.textContent = moodGroups[key].label;
+        button.addEventListener("click", () => {
+          state.activeMoodCategory = key;
+          renderMoodTabs();
+          renderMoodChips();
+        });
+        tabs.appendChild(button);
+      });
+    }
+
+    function renderMoodChips() {
+      const grid = byId("moodChipGrid");
+      grid.innerHTML = "";
+      const group = moodGroups[state.activeMoodCategory];
+      group.words.forEach(word => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "mood-chip";
+        chip.textContent = word;
+        chip.addEventListener("click", () => selectMood(chip, group.icon + "｜" + word));
+        grid.appendChild(chip);
+      });
+    }
+
+    function selectMood(chip, value) {
+      document.querySelectorAll(".mood-chip").forEach(el => el.classList.remove("selected"));
+      chip.classList.add("selected");
+      byId("guestMood").value = value;
+      setText("selectedMoodLabel", "已選：" + parseMood(value).word);
+    }
+
+    function renderRoomOptions() {
+      renderColorOptions();
+      renderDecorOptions();
+    }
+
+    function renderColorOptions() {
+      const grid = byId("roomColorGrid");
+      grid.innerHTML = "";
+      Object.keys(roomColorOptions).forEach(key => {
+        const option = roomColorOptions[key];
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "color-option" + (key === byId("roomColor").value ? " selected" : "");
+        button.addEventListener("click", () => {
+          byId("roomColor").value = key;
+          renderColorOptions();
+        });
+        const swatch = document.createElement("div");
+        swatch.className = "swatch";
+        swatch.style.setProperty("--wall", option.wall);
+        swatch.style.setProperty("--floor", option.floor);
+        const label = document.createElement("span");
+        label.className = "mt-2 block text-sm font-extrabold";
+        label.textContent = option.name;
+        button.appendChild(swatch);
+        button.appendChild(label);
+        grid.appendChild(button);
+      });
+    }
+
+    function renderDecorOptions() {
+      const grid = byId("roomDecorGrid");
+      grid.innerHTML = "";
+      Object.keys(decorOptions).forEach(key => {
+        const option = decorOptions[key];
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "decor-option" + (key === byId("roomDecor").value ? " selected" : "");
+        button.addEventListener("click", () => {
+          byId("roomDecor").value = key;
+          renderDecorOptions();
+        });
+        const row = document.createElement("div");
+        row.className = "flex items-start gap-3";
+        const iconWrap = document.createElement("span");
+        iconWrap.className = "decor-icon shrink-0";
+        iconWrap.style.setProperty("--decor-accent", option.accent);
+        const icon = document.createElement("span");
+        icon.className = "material-symbols-outlined";
+        icon.textContent = option.icon;
+        iconWrap.appendChild(icon);
+        const copy = document.createElement("span");
+        const name = document.createElement("span");
+        name.className = "block text-sm font-extrabold";
+        name.textContent = option.name;
+        const desc = document.createElement("span");
+        desc.className = "mt-1 block text-xs font-bold muted";
+        desc.textContent = option.desc;
+        copy.appendChild(name);
+        copy.appendChild(desc);
+        row.appendChild(iconWrap);
+        row.appendChild(copy);
+        button.appendChild(row);
+        grid.appendChild(button);
+      });
+    }
+
+    function showCheckInForm() {
+      byId("guestName").value = "";
+      byId("guestMessage").value = "";
+      byId("guestMood").value = "";
+      byId("roomFloor").value = "1";
+      byId("roomColor").value = "sakura";
+      byId("roomDecor").value = "plant";
+      setText("selectedMoodLabel", "尚未選擇");
+      state.activeMoodCategory = "happy";
+      renderMoodTabs();
+      renderMoodChips();
+      renderRoomOptions();
+      switchView("checkInView");
+    }
+
+    function submitCheckIn(event) {
+      const button = event.currentTarget;
+      const name = byId("guestName").value.trim();
+      const mood = byId("guestMood").value;
+      const message = byId("guestMessage").value.trim();
+      const color = byId("roomColor").value;
+      const decor = byId("roomDecor").value;
+      const floor = byId("roomFloor").value || 1;
+
+      if (!name) {
+        showToast("請先填寫名字或暱稱。", "error");
+        return;
+      }
+      if (!mood) {
+        showToast("請選擇一個代表現在心情的標籤。", "error");
+        return;
+      }
+
+      setBusy(button, true, "入住中...");
+      runServer("checkInRoom", [state.currentHotelId, name, mood, message, color, decor, floor], () => {
+        setBusy(button, false);
+        showToast("鑰匙已交付，房間準備好了。");
+        switchView("hotelView");
+        fetchRoomsData();
+      }, {
+        failureMessage: "入住資料送出失敗。",
+        onFailure: () => setBusy(button, false)
+      });
+    }
+
+    function resolveRoomColor(value) {
+      const saved = String(value || "");
+      if (roomColorOptions[saved]) return roomColorOptions[saved];
+      const legacyMap = {
+        "room-sakura": "sakura",
+        "room-lemon": "lemon",
+        "room-glacier": "glacier",
+        "room-mint": "mint"
+      };
+      if (legacyMap[saved]) return roomColorOptions[legacyMap[saved]];
+      return { name: "自訂色", wall: saved || roomColorOptions.sakura.wall, floor: saved || roomColorOptions.sakura.floor, trim: roomColorOptions.sakura.trim };
+    }
+
+    function resolveDecor(value) {
+      const saved = String(value || "");
+      if (decorOptions[saved]) return decorOptions[saved];
+      const legacy = Object.keys(decorOptions).find(key => decorOptions[key].name === saved);
+      if (legacy) return decorOptions[legacy];
+      if (!saved) return decorOptions.simple;
+      return { name: saved, icon: "interests", desc: "個人特色裝飾", accent: "var(--primary)" };
+    }
+
+    function applyRoomColor(element, value) {
+      const color = resolveRoomColor(value);
+      element.style.setProperty("--wall", color.wall);
+      element.style.setProperty("--floor", color.floor);
+      element.style.setProperty("--trim", color.trim);
+    }
+
+    function applyModalRoomColor(value) {
+      const color = resolveRoomColor(value);
+      const modal = byId("roomModalCard");
+      if (!modal) return;
+      modal.style.setProperty("--modal-wall", color.wall);
+      modal.style.setProperty("--modal-floor", color.floor);
+      modal.style.setProperty("--modal-trim", color.trim);
+    }
+
+    function openRoomModal(room) {
+      state.currentRoomIdForFeedback = room.roomId;
+      state.currentRoomForModal = room;
+      const moodData = parseMood(room.mood);
+      const decor = resolveDecor(room.decor);
+      const color = resolveRoomColor(room.roomColor);
+      applyModalRoomColor(room.roomColor);
+      setText("modalName", room.guestName || "未署名");
+      setText("modalMood", room.mood ? moodData.word : "未選心情");
+      setText("modalDecor", decor.name);
+      setText("modalColorName", color.name);
+      setText("modalMessage", room.message || "這是一個安靜的角落，房門口暫時沒有留言。");
+      setText("feedbackCountText", "讀取中");
+      byId("feedbackListContainer").innerHTML = '<p class="py-6 text-center font-bold muted">讀取信箱中...</p>';
+      byId("feedbackText").value = "";
+      byId("roomModal").classList.remove("hidden");
+      byId("roomModal").classList.add("flex");
+
+      runServer("getRoomFeedbacks", [room.roomId], renderFeedbacks, { failureMessage: "回饋留言載入失敗。" });
+    }
+
+    function closeModal() {
+      byId("roomModal").classList.add("hidden");
+      byId("roomModal").classList.remove("flex");
+      state.currentRoomForModal = null;
+    }
+
+    function renderFeedbacks(feedbacks) {
+      const list = Array.isArray(feedbacks) ? feedbacks : [];
+      const container = byId("feedbackListContainer");
+      container.innerHTML = "";
+      setText("feedbackCountText", list.length + " 則回饋");
+
+      if (list.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "py-6 text-center font-bold muted";
+        empty.textContent = "信箱目前空空的，投遞第一封溫暖回饋吧。";
+        container.appendChild(empty);
+        return;
+      }
+
+      list.forEach(feedback => {
+        const item = document.createElement("article");
+        item.className = "rounded-[10px] bg-white p-3";
+        const sender = document.createElement("p");
+        sender.className = "text-sm font-extrabold text-[var(--primary)]";
+        sender.textContent = feedback.senderName || "未署名";
+        const text = document.createElement("p");
+        text.className = "mt-1 break-words leading-6";
+        text.textContent = feedback.feedbackText || "";
+        item.appendChild(sender);
+        item.appendChild(text);
+        container.appendChild(item);
+      });
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function sendFeedback(event) {
+      const button = event.currentTarget;
+      const sender = byId("feedbackSender").value.trim();
+      const text = byId("feedbackText").value.trim();
+      if (!sender || !text) {
+        showToast("請填寫署名與回饋內容。", "error");
+        return;
+      }
+
+      setBusy(button, true, "送出");
+      runServer("addFeedback", [state.currentRoomIdForFeedback, sender, text], () => {
+        byId("feedbackText").value = "";
+        setBusy(button, false);
+        runServer("getRoomFeedbacks", [state.currentRoomIdForFeedback], renderFeedbacks, { failureMessage: "回饋留言重新載入失敗。" });
+        fetchRoomsData(false);
+      }, {
+        failureMessage: "回饋送出失敗。",
+        onFailure: () => setBusy(button, false)
+      });
+    }
+
+    function showAdminLogin() {
+      stopAutoRefresh();
+      switchView("adminLoginView");
+    }
+
+    function adminLoginExecute() {
+      runServer("verifyMasterAdmin", [], isValid => {
+        if (!isValid) {
+          showToast("?? Google ?????????", "error");
+          return;
+        }
+        byId("adminPasswordInput").value = "";
+        renderAdminDashboard();
+        switchView("adminDashboardView");
+      }, { failureMessage: "?? Google ?????" });
+    }
+
+    function renderAdminDashboard() {
+      const tbody = byId("adminHotelList");
+      tbody.innerHTML = "";
+      if (state.allHotels.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 4;
+        cell.className = "px-5 py-8 text-center font-bold muted";
+        cell.textContent = "目前尚無飯店營運中。";
+        row.appendChild(cell);
+        tbody.appendChild(row);
+        return;
+      }
+
+      state.allHotels.forEach(hotel => {
+        const row = document.createElement("tr");
+        row.className = "border-b border-[var(--line)] last:border-b-0";
+
+        const name = document.createElement("td");
+        name.className = "px-5 py-4 font-extrabold";
+        name.textContent = hotel.name;
+
+        const id = document.createElement("td");
+        id.className = "px-5 py-4 font-mono text-sm muted";
+        id.textContent = String(hotel.id || "").slice(0, 8);
+
+        const status = document.createElement("td");
+        status.className = "px-5 py-4";
+        const badge = document.createElement("span");
+        badge.className = "rounded-full bg-[var(--surface-soft)] px-3 py-1 text-xs font-extrabold text-[var(--secondary)]";
+        badge.textContent = "營運中";
+        status.appendChild(badge);
+
+        const actions = document.createElement("td");
+        actions.className = "px-5 py-4 text-right";
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "btn btn-danger px-3 py-2 text-sm";
+        del.textContent = "刪除";
+        del.addEventListener("click", event => confirmDeleteHotel(event, hotel.id, hotel.name));
+        actions.appendChild(del);
+
+        row.appendChild(name);
+        row.appendChild(id);
+        row.appendChild(status);
+        row.appendChild(actions);
+        tbody.appendChild(row);
+      });
+    }
+
+    function confirmDeleteHotel(event, hotelId, hotelName) {
+      const ok = window.confirm("確定刪除「" + hotelName + "」嗎？這會一併刪除該飯店的所有房間與溫暖信箱回饋，刪除後無法在此頁復原。");
+      if (!ok) return;
+
+      const button = event.currentTarget;
+      setBusy(button, true, "刪除中");
+      runServer("deleteHotel", [hotelId], () => {
+        showToast("飯店與相關資料已刪除。");
+        setBusy(button, false);
+        loadInitialData();
+        window.setTimeout(renderAdminDashboard, 500);
+      }, {
+        failureMessage: "刪除飯店失敗。",
+        onFailure: () => setBusy(button, false)
+      });
+    }
+
+    function adminLogout() {
+      switchView("homeView");
+      loadInitialData();
+    }
+  </script>
+</body>
+</html>

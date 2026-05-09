@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isTeacher() {
+      return request.auth != null
+        && request.auth.token.email in ['hs5743@gapp.hcc.edu.tw'];
+    }
+
+    function isShortString(field, maxLength) {
+      return field is string && field.size() <= maxLength;
+    }
+
+    match /hotels/{hotelId} {
+      allow get, list: if true;
+      allow create: if isTeacher()
+        &&
+        isShortString(request.resource.data.name, 80)
+        && isShortString(request.resource.data.theme, 32);
+      allow update: if isTeacher()
+        || request.resource.data.diff(resource.data).changedKeys().hasOnly(['roomCount', 'updatedAt']);
+      allow delete: if isTeacher();
+
+      match /access/{accessId} {
+        allow get: if true;
+        allow list: if false;
+        allow create: if isTeacher();
+        allow update, delete: if isTeacher();
+      }
+
+      match /rooms/{roomId} {
+        allow get, list: if true;
+        allow create: if
+          isShortString(request.resource.data.guestName, 24)
+          && isShortString(request.resource.data.mood, 40)
+          && isShortString(request.resource.data.message, 180);
+        allow update: if
+          request.resource.data.diff(resource.data).changedKeys().hasOnly(['feedbackCount', 'updatedAt']);
+        allow delete: if isTeacher();
+
+        match /feedbacks/{feedbackId} {
+          allow get, list: if true;
+          allow create: if
+            isShortString(request.resource.data.senderName, 20)
+            && isShortString(request.resource.data.feedbackText, 120);
+          allow update: if false;
+          allow delete: if isTeacher();
+        }
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
