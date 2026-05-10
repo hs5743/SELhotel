@@ -509,6 +509,24 @@
       color: white;
     }
 
+    .admin-manage-grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .admin-room-card,
+    .admin-feedback-item {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,.82);
+    }
+    .admin-feedback-item {
+      border-radius: 14px;
+    }
+    .admin-danger-text {
+      color: #b64040;
+    }
+
     @media (max-width: 760px) {
       .shell { width: min(100% - 24px, 1180px); }
       .brand-logo { width: 46px; height: 46px; border-radius: 16px; }
@@ -818,6 +836,65 @@
         </div>
       </div>
     </section>
+
+    <section class="view-section" id="adminManageView">
+      <div class="panel overflow-hidden">
+        <div class="flex flex-col gap-3 border-b border-[var(--line)] bg-[var(--surface-soft)] p-5 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p class="eyebrow">HOTEL ADMIN</p>
+            <h1 class="mt-1 break-words text-3xl font-extrabold" id="adminManageTitle">飯店管理</h1>
+            <p class="mt-1 text-sm font-bold muted" id="adminManageMeta">管理房卡密碼、入住者與留言</p>
+          </div>
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <button class="btn btn-ghost px-4" type="button" onclick="renderAdminDashboard(); switchView('adminDashboardView')">
+              <span class="material-symbols-outlined">arrow_back</span>
+              返回總管中心
+            </button>
+            <button class="btn btn-ghost px-4" type="button" onclick="adminLogout()">
+              <span class="material-symbols-outlined">logout</span>
+              安全登出
+            </button>
+          </div>
+        </div>
+
+        <div class="grid gap-5 p-5 lg:grid-cols-[340px_1fr]">
+          <aside class="space-y-4">
+            <section class="subtle-panel p-4">
+              <h2 class="font-extrabold">重設房卡密碼</h2>
+              <p class="mt-1 text-sm leading-6 muted">舊密碼不會顯示；重設後，舊房卡密碼會失效。</p>
+              <div class="mt-4 space-y-3">
+                <input id="adminNewPasscode" class="field" placeholder="輸入新的房卡密碼" type="text" maxlength="48">
+                <button class="btn btn-primary w-full px-4" type="button" onclick="adminResetPasscode(event)">
+                  <span class="material-symbols-outlined">vpn_key</span>
+                  重設房卡密碼
+                </button>
+              </div>
+            </section>
+
+            <section class="subtle-panel p-4">
+              <h2 class="font-extrabold">管理提醒</h2>
+              <p class="mt-2 text-sm leading-6 muted">刪除入住者會一併刪除該房間的溫暖信箱留言；刪除個別留言只會移除該則回饋。</p>
+            </section>
+          </aside>
+
+          <section>
+            <div class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 class="text-2xl font-extrabold">入住者與溫暖信箱</h2>
+                <p class="mt-1 text-sm font-bold muted" id="adminManageCount">讀取中...</p>
+              </div>
+              <button class="btn btn-ghost px-4" type="button" onclick="loadAdminHotelManage(state.adminHotelId)">
+                <span class="material-symbols-outlined">refresh</span>
+                重新整理
+              </button>
+            </div>
+            <div class="admin-manage-grid mt-4" id="adminRoomManageList">
+              <p class="py-8 text-center font-bold muted">讀取入住者資料中...</p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
   </main>
 
   <div class="fixed inset-0 z-50 hidden items-center justify-center p-3 modal-backdrop" id="roomModal">
@@ -876,6 +953,8 @@
       currentRoomIdForFeedback: "",
       currentRoomForModal: null,
       allHotels: [],
+      adminHotelId: "",
+      adminHotelName: "",
       refreshInterval: null,
       currentRoomsDataString: "",
       activeMoodCategory: "happy"
@@ -1017,7 +1096,7 @@
     }
 
     function switchView(viewId) {
-      ["homeView", "hotelView", "checkInView", "adminLoginView", "adminDashboardView"].forEach(id => {
+      ["homeView", "hotelView", "checkInView", "adminLoginView", "adminDashboardView", "adminManageView"].forEach(id => {
         const el = byId(id);
         if (el) el.classList.toggle("active", id === viewId);
       });
@@ -1640,19 +1719,203 @@
         status.appendChild(badge);
 
         const actions = document.createElement("td");
-        actions.className = "px-5 py-4 text-right";
+        actions.className = "px-5 py-4";
+        const actionWrap = document.createElement("div");
+        actionWrap.className = "flex flex-wrap justify-end gap-2";
+        const manage = document.createElement("button");
+        manage.type = "button";
+        manage.className = "btn btn-secondary px-3 py-2 text-sm";
+        manage.textContent = "管理";
+        manage.addEventListener("click", () => showAdminHotelManage(hotel.id, hotel.name));
         const del = document.createElement("button");
         del.type = "button";
         del.className = "btn btn-danger px-3 py-2 text-sm";
         del.textContent = "刪除";
         del.addEventListener("click", event => confirmDeleteHotel(event, hotel.id, hotel.name));
-        actions.appendChild(del);
+        actionWrap.appendChild(manage);
+        actionWrap.appendChild(del);
+        actions.appendChild(actionWrap);
 
         row.appendChild(name);
         row.appendChild(id);
         row.appendChild(status);
         row.appendChild(actions);
         tbody.appendChild(row);
+      });
+    }
+
+    function showAdminHotelManage(hotelId, hotelName) {
+      state.adminHotelId = hotelId;
+      state.adminHotelName = hotelName || "";
+      setText("adminManageTitle", hotelName || "飯店管理");
+      setText("adminManageMeta", "ID 短碼：" + String(hotelId || "").slice(0, 8));
+      byId("adminNewPasscode").value = "";
+      byId("adminRoomManageList").innerHTML = '<p class="py-8 text-center font-bold muted">讀取入住者資料中...</p>';
+      setText("adminManageCount", "讀取中...");
+      switchView("adminManageView");
+      loadAdminHotelManage(hotelId);
+    }
+
+    function loadAdminHotelManage(hotelId) {
+      if (!hotelId) return;
+      runServer("getAdminHotelDetail", [hotelId], renderAdminHotelManage, {
+        failureMessage: "飯店管理資料載入失敗。"
+      });
+    }
+
+    function renderAdminHotelManage(detail) {
+      const hotel = detail && detail.hotel ? detail.hotel : {};
+      const rooms = Array.isArray(detail && detail.rooms) ? detail.rooms : [];
+      state.adminHotelId = hotel.id || state.adminHotelId;
+      state.adminHotelName = hotel.name || state.adminHotelName;
+      setText("adminManageTitle", state.adminHotelName || "飯店管理");
+      setText("adminManageMeta", "ID 短碼：" + String(state.adminHotelId || "").slice(0, 8));
+      setText("adminManageCount", rooms.length + " 位入住者");
+
+      const container = byId("adminRoomManageList");
+      container.innerHTML = "";
+      if (rooms.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "py-8 text-center font-bold muted";
+        empty.textContent = "目前沒有入住者。";
+        container.appendChild(empty);
+        return;
+      }
+
+      rooms.forEach(room => {
+        const card = document.createElement("article");
+        card.className = "admin-room-card p-4";
+
+        const header = document.createElement("div");
+        header.className = "flex flex-col gap-3 md:flex-row md:items-start md:justify-between";
+        const titleWrap = document.createElement("div");
+        const name = document.createElement("h3");
+        name.className = "break-words text-xl font-extrabold";
+        name.textContent = room.guestName || "未署名";
+        const meta = document.createElement("p");
+        meta.className = "mt-1 text-sm font-bold muted";
+        meta.textContent = [formatFloorLabel(room.floor), parseMood(room.mood).word || "未選心情", resolveDecor(room.decor).name].filter(Boolean).join(" · ");
+        titleWrap.appendChild(name);
+        titleWrap.appendChild(meta);
+
+        const delRoom = document.createElement("button");
+        delRoom.type = "button";
+        delRoom.className = "btn btn-danger px-3 py-2 text-sm";
+        delRoom.textContent = "刪除入住者";
+        delRoom.addEventListener("click", event => adminDeleteRoom(event, room));
+
+        header.appendChild(titleWrap);
+        header.appendChild(delRoom);
+        card.appendChild(header);
+
+        const message = document.createElement("p");
+        message.className = "mt-3 whitespace-pre-wrap break-words rounded-[12px] bg-[var(--surface-soft)] p-3 text-sm leading-6";
+        message.textContent = room.message || "房門口暫時沒有留言。";
+        card.appendChild(message);
+
+        const feedbackTitle = document.createElement("div");
+        feedbackTitle.className = "mt-4 flex items-center justify-between gap-3";
+        const feedbackLabel = document.createElement("h4");
+        feedbackLabel.className = "font-extrabold";
+        feedbackLabel.textContent = "溫暖信箱";
+        const feedbackCount = document.createElement("span");
+        feedbackCount.className = "text-sm font-bold muted";
+        const feedbacks = Array.isArray(room.feedbacks) ? room.feedbacks : [];
+        feedbackCount.textContent = feedbacks.length + " 則";
+        feedbackTitle.appendChild(feedbackLabel);
+        feedbackTitle.appendChild(feedbackCount);
+        card.appendChild(feedbackTitle);
+
+        const feedbackList = document.createElement("div");
+        feedbackList.className = "mt-2 space-y-2";
+        if (feedbacks.length === 0) {
+          const emptyFeedback = document.createElement("p");
+          emptyFeedback.className = "rounded-[12px] border border-dashed border-[var(--line)] p-3 text-sm font-bold muted";
+          emptyFeedback.textContent = "尚無留言。";
+          feedbackList.appendChild(emptyFeedback);
+        } else {
+          feedbacks.forEach(feedback => {
+            const item = document.createElement("article");
+            item.className = "admin-feedback-item p-3";
+            const row = document.createElement("div");
+            row.className = "flex flex-col gap-2 md:flex-row md:items-start md:justify-between";
+            const copy = document.createElement("div");
+            copy.className = "min-w-0";
+            const sender = document.createElement("p");
+            sender.className = "font-extrabold text-[var(--primary)]";
+            sender.textContent = feedback.senderName || "未署名";
+            const text = document.createElement("p");
+            text.className = "mt-1 break-words text-sm leading-6";
+            text.textContent = feedback.feedbackText || "";
+            copy.appendChild(sender);
+            copy.appendChild(text);
+
+            const delFeedback = document.createElement("button");
+            delFeedback.type = "button";
+            delFeedback.className = "btn btn-ghost px-3 py-2 text-sm admin-danger-text";
+            delFeedback.textContent = "刪除留言";
+            delFeedback.addEventListener("click", event => adminDeleteFeedback(event, room, feedback));
+
+            row.appendChild(copy);
+            row.appendChild(delFeedback);
+            item.appendChild(row);
+            feedbackList.appendChild(item);
+          });
+        }
+        card.appendChild(feedbackList);
+        container.appendChild(card);
+      });
+    }
+
+    function adminResetPasscode(event) {
+      const button = event.currentTarget;
+      const newPasscode = byId("adminNewPasscode").value.trim();
+      if (!state.adminHotelId || !newPasscode) {
+        showToast("請輸入新的房卡密碼。", "error");
+        return;
+      }
+      const ok = window.confirm("確定重設「" + (state.adminHotelName || "這間飯店") + "」的房卡密碼嗎？舊密碼將立即失效。");
+      if (!ok) return;
+
+      setBusy(button, true, "重設中...");
+      runServer("resetHotelPasscode", [state.adminHotelId, newPasscode], () => {
+        byId("adminNewPasscode").value = "";
+        setBusy(button, false);
+        showToast("房卡密碼已重設，請把新密碼分享給需要進入的人。");
+      }, {
+        failureMessage: "重設房卡密碼失敗。",
+        onFailure: () => setBusy(button, false)
+      });
+    }
+
+    function adminDeleteRoom(event, room) {
+      const ok = window.confirm("確定刪除入住者「" + (room.guestName || "未署名") + "」嗎？這會一併刪除該房間的所有溫暖信箱留言。");
+      if (!ok) return;
+
+      const button = event.currentTarget;
+      setBusy(button, true, "刪除中");
+      runServer("deleteRoom", [state.adminHotelId, room.roomId], () => {
+        showToast("入住者與相關留言已刪除。");
+        loadAdminHotelManage(state.adminHotelId);
+        loadInitialData();
+      }, {
+        failureMessage: "刪除入住者失敗。",
+        onFailure: () => setBusy(button, false)
+      });
+    }
+
+    function adminDeleteFeedback(event, room, feedback) {
+      const ok = window.confirm("確定刪除「" + (feedback.senderName || "未署名") + "」的這則留言嗎？");
+      if (!ok) return;
+
+      const button = event.currentTarget;
+      setBusy(button, true, "刪除中");
+      runServer("deleteFeedback", [state.adminHotelId, room.roomId, feedback.feedbackId], () => {
+        showToast("留言已刪除。");
+        loadAdminHotelManage(state.adminHotelId);
+      }, {
+        failureMessage: "刪除留言失敗。",
+        onFailure: () => setBusy(button, false)
       });
     }
 

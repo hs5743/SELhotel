@@ -66,7 +66,9 @@ function mapHotel(docSnap) {
   const data = docSnap.data() || {};
   return {
     id: docSnap.id,
-    name: data.name || ""
+    name: data.name || "",
+    theme: data.theme || "theme-modern",
+    roomCount: Number(data.roomCount) || 0
   };
 }
 
@@ -87,6 +89,7 @@ function mapRoom(docSnap) {
 function mapFeedback(docSnap) {
   const data = docSnap.data() || {};
   return {
+    feedbackId: docSnap.id,
     senderName: data.senderName || "",
     feedbackText: data.feedbackText || ""
   };
@@ -250,6 +253,86 @@ async function verifyMasterAdmin() {
   return true;
 }
 
+async function getAdminHotelDetail(hotelId) {
+  await ensureTeacher();
+  const hotelSnap = await getDoc(hotelRef(hotelId));
+  if (!hotelSnap.exists() || hotelSnap.data().archived) {
+    throw new Error("找不到該飯店，或飯店已刪除。");
+  }
+
+  const roomsSnap = await getDocs(roomsRef(hotelId));
+  const rooms = [];
+  for (const roomDoc of roomsSnap.docs) {
+    const feedbackSnap = await getDocs(query(feedbacksRef(hotelId, roomDoc.id), orderBy("createdAt", "asc")));
+    rooms.push({
+      ...mapRoom(roomDoc),
+      feedbacks: feedbackSnap.docs.map(mapFeedback)
+    });
+  }
+
+  return {
+    hotel: mapHotel(hotelSnap),
+    rooms: sortRooms(rooms)
+  };
+}
+
+async function resetHotelPasscode(hotelId, newPasscode) {
+  await ensureTeacher();
+  const safePasscode = sanitize(newPasscode, 48);
+  if (!safePasscode) throw new Error("請輸入新的房卡密碼。");
+
+  const hotelSnap = await getDoc(hotelRef(hotelId));
+  if (!hotelSnap.exists() || hotelSnap.data().archived) {
+    throw new Error("找不到該飯店，或飯店已刪除。");
+  }
+
+  const accessSnap = await getDocs(collection(db, "hotels", hotelId, "access"));
+  const batch = writeBatch(db);
+  accessSnap.docs.forEach(accessDoc => batch.delete(accessDoc.ref));
+  const passHash = await sha256Hex(safePasscode);
+  batch.set(doc(db, "hotels", hotelId, "access", passHash), {
+    createdAt: serverTimestamp()
+  });
+  batch.update(hotelRef(hotelId), {
+    updatedAt: serverTimestamp()
+  });
+  await batch.commit();
+  return true;
+}
+
+async function deleteRoom(hotelId, roomId) {
+  await ensureTeacher();
+  const targetRoomRef = roomRef(hotelId, roomId);
+  const roomSnap = await getDoc(targetRoomRef);
+  if (!roomSnap.exists()) return true;
+
+  const feedbackSnap = await getDocs(feedbacksRef(hotelId, roomId));
+  const batch = writeBatch(db);
+  feedbackSnap.docs.forEach(feedbackDoc => batch.delete(feedbackDoc.ref));
+  batch.delete(targetRoomRef);
+  batch.update(hotelRef(hotelId), {
+    roomCount: increment(-1),
+    updatedAt: serverTimestamp()
+  });
+  await batch.commit();
+  return true;
+}
+
+async function deleteFeedback(hotelId, roomId, feedbackId) {
+  await ensureTeacher();
+  const targetFeedbackRef = doc(db, "hotels", hotelId, "rooms", roomId, "feedbacks", feedbackId);
+  await runTransaction(db, async tx => {
+    const feedbackSnap = await tx.get(targetFeedbackRef);
+    if (!feedbackSnap.exists()) return;
+    tx.delete(targetFeedbackRef);
+    tx.update(roomRef(hotelId, roomId), {
+      feedbackCount: increment(-1),
+      updatedAt: serverTimestamp()
+    });
+  });
+  return true;
+}
+
 async function deleteHotel(hotelId) {
   const userEmail = auth.currentUser?.email || "";
   if (!adminEmails.includes(userEmail)) throw new Error("這個帳號沒有總管權限。");
@@ -273,10 +356,14 @@ window.emotionHotelApi = {
   addFeedback,
   checkInRoom,
   createHotel,
+  deleteFeedback,
   deleteHotel,
+  deleteRoom,
+  getAdminHotelDetail,
   getHotelList,
   getHotelRooms,
   getRoomFeedbacks,
+  resetHotelPasscode,
   subscribeHotelRooms,
   verifyMasterAdmin,
   verifyPasscode

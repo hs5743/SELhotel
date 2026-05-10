@@ -22,7 +22,7 @@ service cloud.firestore {
 
       match /access/{accessId} {
         allow get: if true;
-        allow list: if false;
+        allow list: if isTeacher();
         allow create: if isTeacher();
         allow update, delete: if isTeacher();
       }
