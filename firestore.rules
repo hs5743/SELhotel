@@ -32,7 +32,7 @@ service cloud.firestore {
         allow create: if
           isShortString(request.resource.data.guestName, 24)
           && isShortString(request.resource.data.mood, 40)
-          && isShortString(request.resource.data.message, 180);
+          && isShortString(request.resource.data.message, 500);
         allow update: if
           request.resource.data.diff(resource.data).changedKeys().hasOnly(['feedbackCount', 'updatedAt']);
         allow delete: if isTeacher();
@@ -41,7 +41,7 @@ service cloud.firestore {
           allow get, list: if true;
           allow create: if
             isShortString(request.resource.data.senderName, 20)
-            && isShortString(request.resource.data.feedbackText, 120);
+            && isShortString(request.resource.data.feedbackText, 250);
           allow update: if false;
           allow delete: if isTeacher();
         }

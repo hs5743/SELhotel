@@ -763,7 +763,7 @@
 
           <section class="subtle-panel p-4 md:p-5">
             <label class="block text-sm font-extrabold text-[var(--primary)]" for="guestMessage">3. 想掛在房門口的一句話</label>
-            <textarea id="guestMessage" class="field mt-3 min-h-[112px]" maxlength="180" placeholder="今天我想被怎麼陪伴？或想讓大家知道什麼？"></textarea>
+            <textarea id="guestMessage" class="field mt-3 min-h-[112px]" maxlength="500" placeholder="今天我想被怎麼陪伴？或想讓大家知道什麼？"></textarea>
           </section>
 
           <section class="subtle-panel p-4 md:p-5">
@@ -932,7 +932,7 @@
       <div class="border-t border-[var(--line)] bg-white p-4">
         <div class="grid gap-2 md:grid-cols-[150px_1fr_48px]">
           <input id="feedbackSender" class="field" placeholder="署名" type="text" maxlength="20">
-          <input id="feedbackText" class="field" placeholder="寫一句溫暖的回饋..." type="text" maxlength="120">
+          <input id="feedbackText" class="field" placeholder="寫一句溫暖的回饋..." type="text" maxlength="250">
           <button class="btn room-modal-send h-12 px-0" type="button" onclick="sendFeedback(event)" aria-label="送出">
             <span class="material-symbols-outlined">send</span>
           </button>

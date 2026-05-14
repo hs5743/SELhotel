@@ -196,7 +196,7 @@ async function checkInRoom(hotelId, guestName, mood, message, roomColor, decor, 
   await addDoc(roomsRef(hotelId), {
     guestName: safeName,
     mood: safeMood,
-    message: sanitize(message, 180),
+    message: sanitize(message, 500),
     roomColor: sanitize(roomColor, 32) || "sakura",
     decor: sanitize(decor, 32) || "simple",
     floor: normalizeFloor(floor),
@@ -231,7 +231,7 @@ async function getRoomFeedbacks(roomId, hotelId = window.__emotionHotelCurrentHo
 
 async function addFeedback(roomId, senderName, feedbackText, hotelId = window.__emotionHotelCurrentHotelId || "") {
   const safeSender = sanitize(senderName, 20);
-  const safeText = sanitize(feedbackText, 120);
+  const safeText = sanitize(feedbackText, 250);
   if (!safeSender || !safeText) throw new Error("請填寫署名與回饋內容。");
 
   await runTransaction(db, async tx => {
